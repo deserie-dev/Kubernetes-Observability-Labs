@@ -5,9 +5,9 @@ These are some of the projects I've done relating to the three pillars of observ
 <details>
 <summary><b>K8s Logging Using a Logging Agent and the Sidecar Pattern</b></summary><p>
 
-### Used the sidecar multi-container Pod pattern to stream Pod logs to S3 using Fluentd.
+### Use the sidecar multi-container Pod pattern to stream Pod logs to S3 using Fluentd.
 
-Kubernetes has basic support for container logging built-in. Kubernetes will capture anything written to standard output and standard error as a log message. For logs that are not written to standard output, More effort is required. You can always copy log files in containers outside of the container or issue commands by running a shell in the container to retrieve the logs you need.
+---
 
 1. Create a Namespace for the resources you'll create in this lab step and change your default kubectl context to use the Namespace:
 
@@ -17,6 +17,10 @@ kubectl create namespace logs
 # Set namespace as the default for the current context
 kubectl config set-context $(kubectl config current-context) --namespace=logs
 ```
+
+![](/images/a.png)
+
+---
 
 2. Create a multi-container Pod that runs a server and a client that sends requests to the server:
 
@@ -50,7 +54,7 @@ EOF
 kubectl create -f pod-logs.yaml
 ```
 
-![](/images/init-1.png)
+---
 
 3. Retrieve the logs (standard output messages) from the server container:
 
@@ -58,13 +62,19 @@ kubectl create -f pod-logs.yaml
 kubectl logs pod-logs server
 ```
 
+![](/images/b.png)
+
+---
+
 4. Display the most recent log (--tail=1) including the timestamp and stream (-f for follow) the logs from the client container:
 
 ```
 kubectl logs -f --tail=1 --timestamps pod-logs client
 ```
 
-![](/images/init-1.png)
+![](/images/c.png)
+
+---
 
 5. Create an Apache web server and allow access to it via a load balancer:
 
@@ -91,13 +101,21 @@ kubectl create -f pod-webserver.yaml
 kubectl expose pod webserver-logs --type=LoadBalancer
 ```
 
+![](/images/d.png)
+
+---
+
+![](/images/e.png)
+
+---
+
 6. Navigate to the DNS address in a new browser tab to confirm the Service has exposed the Pod over the Internet:
 
-![](/images/init-1.png)
+![](/images/f.png)
 
 7. Refresh the page a few times and then append /oops to the address to cause a Not Found error:
 
-![](/images/init-1.png)
+![](/images/g.png)
 
 8. Display the logs for the webserver Pod:
 
@@ -105,7 +123,7 @@ kubectl expose pod webserver-logs --type=LoadBalancer
 kubectl logs webserver-logs
 ```
 
-![](/images/init-1.png)
+![](/images/h.png)
 
 9. Retrieve the last 10 lines from the conf/httpd.conf file:
 
@@ -113,7 +131,7 @@ kubectl logs webserver-logs
 kubectl exec webserver-logs -- tail -10 conf/httpd.conf
 ```
 
-![](/images/init-1.png)
+![](/images/i.png)
 
 10. Copy the conf/httpd.conf from the container to the bastion host:
 
@@ -121,7 +139,9 @@ kubectl exec webserver-logs -- tail -10 conf/httpd.conf
 kubectl cp webserver-logs:conf/httpd.conf local-copy-of-httpd.conf
 ```
 
-### The sidecar multi-container pattern uses a "sidecar" container to extend the primary container in the Pod. In the context of logging, the sidecar is a logging agent. The logging agent streams logs from the primary container, such as a web server, to a central location that aggregates logs. To allow the sidecar access to the log files, both containers mount a volume at the path of the log files. In this lab step, you will use an S3 bucket to collect logs. You will use a sidecar that uses Fluentd, a popular data collector often used as a logging layer, with an S3 plugin installed to stream log files in the primary container to S3.
+### The sidecar multi-container pattern uses a "sidecar" container to extend the primary container in the Pod. In the context of logging, the sidecar is a logging agent. The logging agent streams logs from the primary container, such as a web server, to a central location that aggregates logs. To allow the sidecar access to the log files, both containers mount a volume at the path of the log files. Use an S3 bucket to collect logs. Use a sidecar that uses Fluentd, a popular data collector often used as a logging layer, with an S3 plugin installed to stream log files in the primary container to S3.
+
+---
 
 11. Create S3 bucket then create a ConfigMap that stores the fluentd configuration file:
 
@@ -170,7 +190,11 @@ EOF
 kubectl create -f fluentd-sidecar-config.yaml
 ```
 
-two log sources are configured in the /var/log directory and their log messages will be tagged with count.format1 and count.format2. The primary container in the Pod will stream logs to those two files. The configuration also describes streaming all the logs to the S3 logs bucket in the match section.
+![](/images/j.png)
+
+Two log sources are configured in the /var/log directory and their log messages will be tagged with count.format1 and count.format2. The primary container in the Pod will stream logs to those two files. The configuration also describes streaming all the logs to the S3 logs bucket in the match section.
+
+---
 
 12. Create a multi-container Pod using a fluentd logging agent sidecar (count-agent):
 
@@ -226,10 +250,20 @@ EOF
 kubectl create -f pod-counter.yaml
 ```
 
+![](/images/k.png)
+
 The count container writes the date and a counter variable ($i) in two different log formats to two different log files in the /var/log directory every second. The /var/log directory is mounted as a Volume in both the primary count container and the count-agent sidecar so both containers can access the logs. The sidecar also mounts the ConfigMap to access the fluentd configuration file. By using a ConfigMap, the same sidecar container can be used for any configuration compared to storing the configuration in the image and having to manage separate container images for each configuration.
+
+---
 
 13. View the logs in S3
 
-![](/images/init-1.png)
+![](/images/l.png)
+
+---
+
+![](/images/m.png)
+
+---
 
 </p></details>
