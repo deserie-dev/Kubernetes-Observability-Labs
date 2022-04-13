@@ -395,6 +395,69 @@ In this Lab Step, you installed the Kubernetes Dashboard into the monitoring nam
 
 ### Install and Configure Prometheus
 
+Introduction
+In this Lab Step, you'll install and configure Prometheus into the lab provided Kubernetes cluster. Prometheus is an open-source systems monitoring and alerting service. You'll configure Prometheus to perform automatic service discovery of both the API pods launched in the previous Lab Step, and the cluster's nodes. Prometheus will then automatically begin to collect metrics for both the API pods and the cluster's nodes. HTTP request based metrics will be collected from the API pods, and Memory and CPU utilisation metrics will be collected from the cluster's nodes.
+
+You will configure the Prometheus web admin interface to be exposed over the Internet on port 30900, allowing you to then access it from your own workstation.
+
+Instructions
+
+1. Using Helm, install Prometheus using the publicly available Prometheus Helm Chart. Deploy Prometheus into the monitoring namespace within the lab provided cluster. In the terminal execute the following commands:
+
+```
+{
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add stable https://charts.helm.sh/stable
+helm repo update
+helm install prometheus --namespace monitoring --values ./code/prometheus/values.yml prometheus-community/prometheus --version 13.0.0
+}
+```
+
+2. Confirm that Prometheus has been successfully rolled out within the cluster. In the terminal execute the following command:
+
+```
+kubectl get deployment -n monitoring -w
+```
+
+Note: The previous command puts a watch on all deployments happening in the monitoring namespace. Exit the watch when all deployments have a READY status of 1/1 (CTRL+C to exit)
+
+3. Confirm that the Prometheus Node Exporter DaemonSet resource has been created successfully. The Prometheus Node Exporter is used to collect Memory and CPU metrics off each node within the Kubernetes cluster. In the terminal execute the following command:
+
+```
+kubectl get daemonset -n monitoring
+```
+
+4. Patch the Prometheus Node Exporter DaemonSet to ensure that Prometheus can collect Memory and CPU node metrics. In the terminal execute the following command:
+
+```
+kubectl patch daemonset prometheus-node-exporter -n monitoring -p '{"spec":{"template":{"metadata":{"annotations":{"prometheus.io/scrape": "true"}}}}}'
+```
+
+5. The Prometheus web admin interface now needs to be exposed to the Internet so that you can browse to it. To do so, create a new NodePort based Service, and expose the web admin interface on port 30900. In the terminal execute the following command:
+
+```
+{
+kubectl expose deployment prometheus-server --type=NodePort --name=prometheus-main --port=30900 --target-port=9090 -n monitoring
+kubectl patch service prometheus-main -n monitoring -p '{"spec":{"ports":[{"nodePort": 30900, "port": 30900, "protocol": "TCP", "targetPort": 9090}]}}'
+}
+```
+
+6. Get the public IP address of the Kubernetes cluster that Prometheus has been deployed into. In the terminal execute the following command:
+
+```
+export | grep K8S_CLUSTER_PUBLICIP
+```
+
+7. Copy the Public IP address from the previous command and then using your local browser, browse to the URL: http://PUBLIC_IP:30900.
+
+8. Within Prometheus, click the Status top menu item and then select Service Discovery:
+
+9. Within Prometheus, click the Status top menu item and then select Targets:
+
+Summary
+
+In this lab step, you installed Prometheus into the monitoring namespace within the Kubernetes cluster. You then set up and exposed the Prometheus web admin interface using a NodePort based Service. You then logged into the Prometheus web admin interface and confirmed the service discovery was working correctly. In the next lab step you will install and configure Grafana and import a prebuilt dashboard that pulls real-time data from Prometheus.
+
 </p></details>
 
 ---
