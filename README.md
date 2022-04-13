@@ -458,6 +458,86 @@ Summary
 
 In this lab step, you installed Prometheus into the monitoring namespace within the Kubernetes cluster. You then set up and exposed the Prometheus web admin interface using a NodePort based Service. You then logged into the Prometheus web admin interface and confirmed the service discovery was working correctly. In the next lab step you will install and configure Grafana and import a prebuilt dashboard that pulls real-time data from Prometheus.
 
+### Install and Configure Grafana
+
+Introduction
+In this Lab Step, you'll install and configure Grafana into the monitoring namespace within the lab provided Kubernetes cluster. Grafana is an open source analytics and interactive visualization web application, providing charts, graphs, and alerts for monitoring and observability requirements. You'll configure Grafana to connect to Prometheus which you setup in the previous lab step as a data source. Once connected, you'll import and deploy a prebuilt Grafana dashboard.
+
+You will configure the Grafana web admin interface to be exposed over the Internet on port 30300, allowing you to then access it from your own workstation.
+
+Instructions
+
+1. Using Helm, install Grafana using the publicly available Grafana Helm Chart. You will deploy Grafana into the monitoring namespace within the lab provided cluster. In the terminal execute the following commands:
+
+```
+{
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+helm install grafana --namespace monitoring grafana/grafana --version 6.1.14
+}
+```
+
+2. Confirm that the Grafana deployment has been rolled out successfully. In the terminal execute the following command:
+
+```
+kubectl get deployment grafana -n monitoring -w
+```
+
+Note: The previous command puts a watch on the grafana deployment taking place in the monitoring namepace. Exit the watch when the deployment has a READY status of 1/1 (CTRL+C to exit)
+
+3. The Grafana web admin interface now needs to be exposed to the Internet. To do so, create a new NodePort based Service, exposing the web admin interface on port 30900. In the terminal execute the following command:
+
+```
+{
+kubectl expose deployment grafana --type=NodePort --name=grafana-main --port=30300 --target-port=3000 -n monitoring
+kubectl patch service grafana-main -n monitoring -p '{"spec":{"ports":[{"nodePort": 30300, "port": 30300, "protocol": "TCP", "targetPort": 3000}]}}'
+}
+```
+
+4. Extract the default admin password which will be required to login. In the terminal execute the following command:
+
+```
+kubectl get secret --namespace monitoring grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+```
+
+5. Get the public IP address of the Kubernetes cluster that Grafana has been deployed into. In the terminal execute the following command:
+
+```
+export | grep K8S_CLUSTER_PUBLICIP
+```
+
+6. Copy the Public IP address from the previous command and then using your local browser, browse to port http://PUBLIC_IP:30300.
+
+7. To login into Grafana, use the following credentials:
+
+Email or username: admin
+
+Password: <default admin password extracted in step 4 above>
+
+8. Having successfully authenticated, the Welcome to Grafana home page is displayed:
+
+9. Within the Data Sources section, click on the Add your first data source option:
+
+10. In the Add data source view, select the Prometheus option by clicking on it's Select button:
+
+11. In the Data Sources / Prometheus configuration view update the HTTP URL to be the same URL that you previously used to browse to the Prometheus web admin interface. Leave all other default settings as is. In particular its important to leave the Name field set to Prometheus. Complete the Prometheus data source setup by clicking on the Save & Test button at the bottom.
+
+12. Confirm that the Prometheus connectivity is valid and working - indicated by a green highlighted Data source is working message:
+
+13. Return to the IDE. Within the Files tab on the left handside menu, open the project/code/grafana directory and click on the dashboard.json file to open it within the editor pane. In the editor pane, select all of the configuration and copy it to the clipboard.
+
+14. Return to Grafana and this time select the Create icon (+) on the main left hand side menu, and then select the dashboard Import option like so:
+
+15. In the Import view, paste in the copied Grafana dashboard json into the Import via panel json area and then click the Load button:
+
+16. Under Import Options, accept all defaults without changing anything, and then click the Import button:
+
+17. Grafana will now load the prebuilt dashboard and start rendering visualisations using live monitoring data streams taken from Prometheus. The dashboard view automatically refreshes every 5 seconds.
+
+Summary
+
+In this lab step, you installed Grafana into the monitoring namespace within the Kubernetes cluster. You then set up and exposed the Grafana web admin interface using a NodePort based Service. You then logged into the Grafana web admin interface and setup Prometheus as a data source. You then imported a prebuilt dashboard. Grafana then loaded the dashboard and starting pulling live monitoring data from the Prometheus data source.
+
 </p></details>
 
 ---
