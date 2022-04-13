@@ -2,6 +2,8 @@
 
 These are some of the projects I've done relating to the three pillars of observability - logs, metrics, and traces.
 
+---
+
 <details>
 <summary><b>K8s Logging Using a Logging Agent and the Sidecar Pattern</b></summary><p>
 
@@ -267,3 +269,132 @@ The count container writes the date and a counter variable ($i) in two different
 ---
 
 </p></details>
+
+---
+
+<details>
+<summary><b>Monitoring K8s with the Kubernetes Dashboard, Prometheus, and Grafana</b></summary><p>
+
+# Deploy a Simple API Application
+
+Introduction
+In this Lab Step, you'll deploy a simple Python Flask web based API into the lab provided Kubernetes cluster. The API has been instrumented to provide various metrics which will be collected by Prometheus for observability purposes.
+
+Instructions
+
+1. Expand the Files tree view by clicking on the Files tab on the left handside menu, and then open the project/code/api directory:
+
+2. The api directory contains the following 3 files which have then been used to build the cloudacademydevops/api-metrics container image. Open each of the following files within the editor view and review their contents.
+
+api.py
+Dockerfile
+requirements.txt
+The api.py file contains the Python source code which implements the example API. In particular take note of the following:
+
+Line 5 - imports a PromethusMetrics module to automatically generate Flask based metrics and provide them for collection at the default endpoint /metrics
+Line 10-32 - implements 5 x API endpoints:
+/one
+/two
+/three
+/four
+/error
+All example endpoints, except for the error endpoint, introduce a small amount of latency which will be measured and observed within both Prometheus and Grafana.
+The error endpoint returns an HTTP 500 server error response code, which again will be measured and observed within both Prometheus and Grafana.
+The Docker container image containing this source code has already been built using the tag cloudacademydevops/api-metrics 3. Within the Files tab on the left handside menu, open the project/code/k8s directory and click on the api.yml file:
+
+4. The api.yml file contains the Kubernetes resources that will be created for the API when deployed into the cluster. In particular note the following:
+
+Lines 1-25: API Deployment containing 2 pods
+Line 22: Pods are based off the container image cloudacademydevops/api-metrics
+Lines 27-46: API Service - loadbalances traffic across the 2 API Deployment pods
+Lines 34-37: API Service is annotated to ensure that the Prometheus scraper will automatically discover the API pods behind it. Prometheus will then collect their metrics from the discovered targets
+
+7. Deploy the API application. In the terminal execute the following command:
+
+```
+kubectl apply -f ./code/k8s
+```
+
+8. Confirm that the API pods are in a running status. In the terminal execute the following command:
+
+```
+kubectl get pods
+```
+
+9. Confirm that the service has been created. In the terminal execute the following command:
+
+```
+kubectl get svc
+```
+
+10. In order to generate traffic against the deployed API - spin up a single generator pod. In the terminal execute the following command:
+
+```
+kubectl run generator --env="API_URL=http://api-service:5000" --image=cloudacademydevops/api-generator --image-pull-policy IfNotPresent
+```
+
+11. Confirm that the generator pod is in a running status. In the terminal execute the following command:
+
+```
+kubectl get pods
+```
+
+Summary
+
+In this Lab Step, you deployed a simple Python Flask web based API, which has been instrumented to automatically collect and provide metrics that will be collected by Prometheus. Additionally, you also deployed a single generator pod which will continually make HTTP requests against the API. In the next Lab Step you will install and configure Prometheus.
+
+### Install and Configure K8s Dashboard
+
+Introduction
+In this Lab Step, you'll install and configure the Kubernetes Dashboard and expose it over the Internet on port 30990, allowing you to then access it from your own workstation. The Kubernetes Dashboard is a web-based Kubernetes user interface. You can use Kubernetes Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized application, and/or manage other cluster resources.
+
+Instructions
+
+1. Create a new monitoring namespace within the cluster. In the terminal execute the following command:
+
+```
+kubectl create ns monitoring
+```
+
+2. Using Helm, install the Kubernetes Dashboard using the publicly available Kubernetes Dashboard Helm Chart. Deploy the dashboard into the monitoring namespace within the lab provided cluster. In the terminal execute the following commands:
+
+```
+{
+helm repo add k8s-dashboard https://kubernetes.github.io/dashboard
+helm repo update
+helm install k8s-dashboard --namespace monitoring k8s-dashboard/kubernetes-dashboard --set=protocolHttp=true --set=serviceAccount.create=true --set=serviceAccount.name=k8sdash-serviceaccount --version 3.0.2
+}
+```
+
+3. Establish permissions within the cluster to allow the Kubernetes Dashboard to read and write all cluster resources. In the terminal execute the following command:
+
+```
+kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=monitoring:k8sdash-serviceaccount
+```
+
+4. The Kubernetes Dashboard web interface now needs to be exposed to the Internet so that you can browse to it. To do so, create a new NodePort based Service, and expose the web admin interface on port 30990. In the terminal execute the following command:
+
+```
+{
+kubectl expose deployment k8s-dashboard-kubernetes-dashboard --type=NodePort --name=k8s-dashboard --port=30990 --target-port=9090 -n monitoring
+kubectl patch service k8s-dashboard -n monitoring -p '{"spec":{"ports":[{"nodePort": 30990, "port": 30990, "protocol": "TCP", "targetPort": 9090}]}}'
+}
+```
+
+5. Get the public IP address of the Kubernetes cluster that Prometheus has been deployed into . In the terminal execute the following command:
+
+```
+export | grep K8S_CLUSTER_PUBLICIP
+```
+
+6. Copy the Public IP address from the previous command and then using your local browser, browse to the URL: http://PUBLIC_IP:30990.
+
+Summary
+
+In this Lab Step, you installed the Kubernetes Dashboard into the monitoring namespace within the Kubernetes cluster. You then setup and exposed the dashboard using a NodePort based Service. You then logged into the dashboard and confirmed that it was functional. In the next Lab Step you will install and configure Prometheus to start collecting metrics.
+
+### Install and Configure Prometheus
+
+</p></details>
+
+---
