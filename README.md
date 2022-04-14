@@ -315,17 +315,23 @@ Lines 34-37: API Service is annotated to ensure that the Prometheus scraper will
 kubectl apply -f ./code/k8s
 ```
 
+![](/images/n.png)
+
 8. Confirm that the API pods are in a running status. In the terminal execute the following command:
 
 ```
 kubectl get pods
 ```
 
+![](/images/o.png)
+
 9. Confirm that the service has been created. In the terminal execute the following command:
 
 ```
 kubectl get svc
 ```
+
+![](/images/p.png)
 
 10. In order to generate traffic against the deployed API - spin up a single generator pod. In the terminal execute the following command:
 
@@ -356,6 +362,8 @@ Instructions
 kubectl create ns monitoring
 ```
 
+![](/images/q.png)
+
 2. Using Helm, install the Kubernetes Dashboard using the publicly available Kubernetes Dashboard Helm Chart. Deploy the dashboard into the monitoring namespace within the lab provided cluster. In the terminal execute the following commands:
 
 ```
@@ -365,6 +373,8 @@ helm repo update
 helm install k8s-dashboard --namespace monitoring k8s-dashboard/kubernetes-dashboard --set=protocolHttp=true --set=serviceAccount.create=true --set=serviceAccount.name=k8sdash-serviceaccount --version 3.0.2
 }
 ```
+
+![](/images/r.png)
 
 3. Establish permissions within the cluster to allow the Kubernetes Dashboard to read and write all cluster resources. In the terminal execute the following command:
 
@@ -381,13 +391,19 @@ kubectl patch service k8s-dashboard -n monitoring -p '{"spec":{"ports":[{"nodePo
 }
 ```
 
+![](/images/s.png)
+
 5. Get the public IP address of the Kubernetes cluster that Prometheus has been deployed into . In the terminal execute the following command:
 
 ```
 export | grep K8S_CLUSTER_PUBLICIP
 ```
 
+![](/images/t.png)
+
 6. Copy the Public IP address from the previous command and then using your local browser, browse to the URL: http://PUBLIC_IP:30990.
+
+![](/images/u.png)
 
 Summary
 
@@ -413,11 +429,15 @@ helm install prometheus --namespace monitoring --values ./code/prometheus/values
 }
 ```
 
+![](/images/v.png)
+
 2. Confirm that Prometheus has been successfully rolled out within the cluster. In the terminal execute the following command:
 
 ```
 kubectl get deployment -n monitoring -w
 ```
+
+![](/images/w.png)
 
 Note: The previous command puts a watch on all deployments happening in the monitoring namespace. Exit the watch when all deployments have a READY status of 1/1 (CTRL+C to exit)
 
@@ -427,11 +447,15 @@ Note: The previous command puts a watch on all deployments happening in the moni
 kubectl get daemonset -n monitoring
 ```
 
+![](/images/x.png)
+
 4. Patch the Prometheus Node Exporter DaemonSet to ensure that Prometheus can collect Memory and CPU node metrics. In the terminal execute the following command:
 
 ```
 kubectl patch daemonset prometheus-node-exporter -n monitoring -p '{"spec":{"template":{"metadata":{"annotations":{"prometheus.io/scrape": "true"}}}}}'
 ```
+
+![](/images/y.png)
 
 5. The Prometheus web admin interface now needs to be exposed to the Internet so that you can browse to it. To do so, create a new NodePort based Service, and expose the web admin interface on port 30900. In the terminal execute the following command:
 
@@ -442,17 +466,27 @@ kubectl patch service prometheus-main -n monitoring -p '{"spec":{"ports":[{"node
 }
 ```
 
+![](/images/z.png)
+
 6. Get the public IP address of the Kubernetes cluster that Prometheus has been deployed into. In the terminal execute the following command:
 
 ```
 export | grep K8S_CLUSTER_PUBLICIP
 ```
 
+![](/images/aa.png)
+
 7. Copy the Public IP address from the previous command and then using your local browser, browse to the URL: http://PUBLIC_IP:30900.
+
+![](/images/bb.png)
 
 8. Within Prometheus, click the Status top menu item and then select Service Discovery:
 
+![](/images/cc.png)
+
 9. Within Prometheus, click the Status top menu item and then select Targets:
+
+![](/images/dd.png)
 
 Summary
 
@@ -477,11 +511,15 @@ helm install grafana --namespace monitoring grafana/grafana --version 6.1.14
 }
 ```
 
+![](/images/ee.png)
+
 2. Confirm that the Grafana deployment has been rolled out successfully. In the terminal execute the following command:
 
 ```
 kubectl get deployment grafana -n monitoring -w
 ```
+
+![](/images/ff.png)
 
 Note: The previous command puts a watch on the grafana deployment taking place in the monitoring namepace. Exit the watch when the deployment has a READY status of 1/1 (CTRL+C to exit)
 
@@ -493,6 +531,8 @@ kubectl expose deployment grafana --type=NodePort --name=grafana-main --port=303
 kubectl patch service grafana-main -n monitoring -p '{"spec":{"ports":[{"nodePort": 30300, "port": 30300, "protocol": "TCP", "targetPort": 3000}]}}'
 }
 ```
+
+![](/images/gg.png)
 
 4. Extract the default admin password which will be required to login. In the terminal execute the following command:
 
@@ -506,7 +546,11 @@ kubectl get secret --namespace monitoring grafana -o jsonpath="{.data.admin-pass
 export | grep K8S_CLUSTER_PUBLICIP
 ```
 
+![](/images/hh.png)
+
 6. Copy the Public IP address from the previous command and then using your local browser, browse to port http://PUBLIC_IP:30300.
+
+![](/images/ii.png)
 
 7. To login into Grafana, use the following credentials:
 
@@ -516,13 +560,19 @@ Password: <default admin password extracted in step 4 above>
 
 8. Having successfully authenticated, the Welcome to Grafana home page is displayed:
 
+![](/images/jj.png)
+
 9. Within the Data Sources section, click on the Add your first data source option:
 
 10. In the Add data source view, select the Prometheus option by clicking on it's Select button:
 
 11. In the Data Sources / Prometheus configuration view update the HTTP URL to be the same URL that you previously used to browse to the Prometheus web admin interface. Leave all other default settings as is. In particular its important to leave the Name field set to Prometheus. Complete the Prometheus data source setup by clicking on the Save & Test button at the bottom.
 
+![](/images/kk.png)
+
 12. Confirm that the Prometheus connectivity is valid and working - indicated by a green highlighted Data source is working message:
+
+![](/images/ll.png)
 
 13. Return to the IDE. Within the Files tab on the left handside menu, open the project/code/grafana directory and click on the dashboard.json file to open it within the editor pane. In the editor pane, select all of the configuration and copy it to the clipboard.
 
@@ -530,9 +580,13 @@ Password: <default admin password extracted in step 4 above>
 
 15. In the Import view, paste in the copied Grafana dashboard json into the Import via panel json area and then click the Load button:
 
+![](/images/m.png)
+
 16. Under Import Options, accept all defaults without changing anything, and then click the Import button:
 
 17. Grafana will now load the prebuilt dashboard and start rendering visualisations using live monitoring data streams taken from Prometheus. The dashboard view automatically refreshes every 5 seconds.
+
+![](/images/nn.png)
 
 Summary
 
